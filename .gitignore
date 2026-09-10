@@ -1,6 +1,9 @@
-node_modules
-.next
-out
+node_modules/
+.next/
 .env.local
-*.tsbuildinfo
-.DS_Store
+dist/
+/.vscode/
+.env
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
