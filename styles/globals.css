@@ -3758,17 +3758,17 @@ body:has(.selflearn-session-view) .home-footer{
   margin-top:14px;
   margin-bottom:18px;
 }
-.home-preview-mockup-wrap{
+.home-preview-window-wrap{
   position:relative;
 }
-.home-preview-mockup-wrap::before{
+.home-preview-window-wrap::before{
   content:'';
   position:absolute;
   inset:-40px;
   background:radial-gradient(60% 60% at 50% 40%, rgba(232,90,51,.14), transparent 70%);
   z-index:0;
 }
-.home-preview-mockup{
+.home-preview-window{
   position:relative;
   z-index:1;
   background:var(--ink);
@@ -3781,22 +3781,22 @@ body:has(.selflearn-session-view) .home-footer{
   transform:perspective(1400px) rotateX(2deg) rotateY(-2deg);
   transition:transform .5s cubic-bezier(.16,1,.3,1);
 }
-.home-preview-mockup:hover{
+.home-preview-window:hover{
   transform:perspective(1400px) rotateX(0deg) rotateY(0deg) translateY(-4px);
 }
-.home-preview-mockup-bar{
+.home-preview-window-bar{
   display:flex;
   gap:6px;
   padding:16px 18px;
   border-bottom:1px solid rgba(255,255,255,.08);
 }
-.home-preview-mockup-bar span{
+.home-preview-window-bar span{
   width:10px;
   height:10px;
   border-radius:50%;
   background:rgba(255,255,255,.16);
 }
-.home-preview-mockup-body{
+.home-preview-window-body{
   padding:32px;
   display:flex;
   flex-direction:column;
@@ -4546,7 +4546,7 @@ body:has(.selflearn-session-view) .home-footer{
   .home-section-header{margin-bottom:44px}
   .home-roles-section{padding:64px 40px}
   .home-preview-section{grid-template-columns:1fr;padding:64px 40px;gap:44px}
-  .home-preview-mockup-wrap{order:-1}
+  .home-preview-window-wrap{order:-1}
   .home-how-section{padding:64px 40px}
   .home-cta-section{padding:80px 40px}
   .home-footer-surface{padding:56px 40px 36px;gap:26px}
@@ -5032,7 +5032,7 @@ body:has(.selflearn-session-view) .home-footer{
     height:auto;
   }
 }
-/* Mobile: a true full-screen chat takeover (Claude/ChatGPT mobile
+/* Mobile: a true full-screen chat takeover (standard mobile chat
    pattern) — the site header/footer/page padding were eating most of the
    viewport, leaving a small message window no matter how the internal
    heights were tuned. Instead the lesson card becomes a fixed layer that

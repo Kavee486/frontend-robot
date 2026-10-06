@@ -216,14 +216,14 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="home-preview-mockup-wrap">
-        <div className="home-preview-mockup" aria-hidden="true">
-          <div className="home-preview-mockup-bar">
+        <div className="home-preview-window-wrap">
+        <div className="home-preview-window" aria-hidden="true">
+          <div className="home-preview-window-bar">
             <span />
             <span />
             <span />
           </div>
-          <div className="home-preview-mockup-body">
+          <div className="home-preview-window-body">
             <div className="home-preview-kpis">
               <div className="home-preview-kpi">
                 <p>Mastery</p>
