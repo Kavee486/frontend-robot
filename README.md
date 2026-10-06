@@ -1,4 +1,4 @@
-# Atlas — Personalized Learning Robot (Frontend)
+# Atlas — Personalized Learning Robot
 
 Atlas is the web interface for the Personalized Robot learning platform. It gives
 students an adaptive, AI-guided study space and gives teachers and administrators
