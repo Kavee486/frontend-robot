@@ -1,190 +1,208 @@
-// A2 · Sign In — Editorial Warm
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
-import Robot from '../components/Robot';
-import { login, saveToken } from '../lib/api';
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
+import { getCurrentUser, loginUser } from '../lib/api'
+import { getRoleHome, setStoredUser } from '../lib/session'
+import Image from 'next/image'
+import PasswordInput from '../components/PasswordInput'
+import { useToast } from '../components/ToastProvider'
 
-type Role = 'student' | 'teacher' | 'admin';
+type LoginErrors = Partial<Record<'username' | 'password', string>>
+
+function validateLogin(username: string, password: string): LoginErrors {
+  const errs: LoginErrors = {}
+  if (!username.trim()) errs.username = 'Please enter your username.'
+  if (!password) errs.password = 'Please enter your password.'
+  return errs
+}
 
 export default function Login() {
-  const router = useRouter();
-  const [email, setEmail] = useState('aria.tan@school.edu');
-  const [password, setPassword] = useState('atlas2026');
-  const [role, setRole] = useState<Role>('student');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<LoginErrors>({})
+  const [submitted, setSubmitted] = useState(false)
+  const router = useRouter()
+  const toast = useToast()
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+  // Explain an automatic sign-out (SessionWatcher redirects here with ?reason=idle).
+  const idleNotified = useRef(false)
+  useEffect(() => {
+    if (router.query.reason === 'idle' && !idleNotified.current) {
+      idleNotified.current = true
+      toast.info?.({ title: 'Signed out', message: 'You were signed out after 1 hour of inactivity.' })
+    }
+  }, [router.query.reason, toast])
+
+  function onUsername(v: string) {
+    setUsername(v)
+    if (submitted) setFieldErrors(validateLogin(v, password))
+  }
+
+  function onPassword(v: string) {
+    setPassword(v)
+    if (submitted) setFieldErrors(validateLogin(username, v))
+  }
+
+  async function handleSubmit(e: any) {
+    e.preventDefault()
+    setSubmitted(true)
+
+    const errs = validateLogin(username, password)
+    setFieldErrors(errs)
+    if (Object.keys(errs).length > 0) return
+
+    setLoading(true)
     try {
-      const res = await login(email, password);
-      saveToken(res.token);
-      router.push('/dashboard');
-    } catch {
-      // Offline / demo — proceed anyway for design preview
-      router.push('/dashboard');
+      await loginUser(username.trim(), password)
+      const me = await getCurrentUser()
+      setStoredUser(me)
+      toast.success({ title: `Welcome back, ${me?.full_name || me?.username || 'there'}`, message: 'You are signed in.' })
+      router.push(getRoleHome(me?.role))
+    } catch (err: any) {
+      toast.error({ title: 'Sign in failed', message: err?.response?.data?.detail || 'Check your username and password.' })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--cream)' }}>
-      <div className="artboard-bar">
-        <span>A2 · Sign In</span>
-        <span>Editorial Warm</span>
+  <div className="auth-split">
+    {/* LEFT PANEL */}
+
+    <div className="auth-left">
+      <div className="auth-left-content">
+        <p className="home-eyebrow">
+          Returning To Learn
+        </p>
+
+        <h1 className="editorial-title auth-title">
+          "Pick up exactly
+          <br />
+          where you
+          <br />
+          <span
+            style={{
+              color: 'var(--accent)',
+              fontStyle: 'italic'
+            }}
+          >
+            left off.
+          </span>
+          "
+        </h1>
+
+        <p className="auth-desc">
+          Your knowledge model, conversation history, and mastery map
+          travel with you across every device.
+        </p>
       </div>
 
-      <section
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          minHeight: 'calc(100vh - 36px)',
-          borderTop: '1px solid var(--rule)',
-        }}
-      >
-        {/* Left: editorial pane */}
-        <div style={{ padding: '52px 60px', position: 'relative' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="diamond" />
-            <strong style={{ letterSpacing: '0.1em' }}>ATLAS</strong>
+      <div className="auth-mascot-col">
+      <div className="auth-mascot-wrap">
+        {/* Glow */}
+
+        <div className="auth-glow" />
+
+        <Image
+          src="/robot.svg"
+          alt="Atlas Robot"
+          width={220}
+          height={220}
+          className="auth-mascot-image"
+        />
+      </div>
+
+    </div>
+    </div>
+
+    {/* RIGHT PANEL */}
+
+    <div className="auth-right">
+      <div className="auth-right-inner">
+        <p className="home-eyebrow">
+          Sign In
+        </p>
+
+        <h2 className="editorial-title auth-heading">
+          Continue your session.
+        </h2>
+
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-row">
+            <label
+              htmlFor="login-username"
+              style={{
+                letterSpacing: '.25em',
+                textTransform: 'uppercase',
+                fontSize: 12,
+                fontWeight: 600
+              }}
+            >
+              Username
+            </label>
+            <input
+              id="login-username"
+              className="editorial-input"
+              type="text"
+              value={username}
+              onChange={e => onUsername(e.target.value)}
+              aria-invalid={!!fieldErrors.username}
+              autoComplete="username"
+              required
+            />
+            {fieldErrors.username && <p className="form-error" style={{ marginTop: 6 }}>{fieldErrors.username}</p>}
           </div>
 
-          <div style={{ marginTop: 110, maxWidth: 480 }}>
-            <div className="eyebrow" style={{ marginBottom: 24 }}>
-              RETURNING TO LEARN
-            </div>
-            <h1
-              className="display"
-              style={{ fontSize: 'clamp(48px, 5vw, 72px)', margin: 0 }}
-            >
-              "Pick up exactly<br />
-              where you<br />
-              <span className="italic-accent">left off.</span>"
-            </h1>
-            <p style={{ fontSize: 16, color: 'var(--ink-soft)', marginTop: 28, maxWidth: 380 }}>
-              Your knowledge model, conversation history, and mastery map travel with you
-              across every device.
-            </p>
+          <div className="form-row" style={{ marginTop: 24 }}>
+            <label className="form-label" htmlFor="login-password">
+              Password
+            </label>
+            <PasswordInput
+              id="login-password"
+              value={password}
+              onChange={onPassword}
+              ariaInvalid={!!fieldErrors.password}
+              autoComplete="current-password"
+            />
+            {fieldErrors.password && <p className="form-error" style={{ marginTop: 6 }}>{fieldErrors.password}</p>}
           </div>
+
+          <button
+            className="btn"
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              marginTop: 30
+            }}
+          >
+            {loading ? 'Signing in...' : 'Sign in →'}
+          </button>
 
           <div
             style={{
-              position: 'absolute',
-              bottom: 48,
-              left: 60,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 10.5,
-              letterSpacing: '0.18em',
-              color: 'var(--taupe)',
+              marginTop: 30,
+              textAlign: 'center'
             }}
           >
-            VOL. III · ISSUE 04
-          </div>
-          <div style={{ position: 'absolute', bottom: 56, right: 80 }}>
-            <Robot size={140} />
-          </div>
-        </div>
+            <span className="muted">
+              New here?{' '}
+            </span>
 
-        {/* Right: form pane */}
-        <div
-          style={{
-            background: 'var(--cream-soft)',
-            borderLeft: '1px solid var(--rule)',
-            display: 'grid',
-            placeItems: 'center',
-            padding: '52px 80px',
-          }}
-        >
-          <form onSubmit={submit} style={{ width: '100%', maxWidth: 440 }}>
-            <div className="eyebrow" style={{ marginBottom: 18 }}>SIGN IN</div>
-            <h2 className="display" style={{ fontSize: 48, margin: '0 0 36px' }}>
-              Continue your <span className="italic-accent">session.</span>
-            </h2>
-
-            <label className="field-label">EMAIL</label>
-            <input
-              className="field-input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-
-            <label className="field-label" style={{ marginTop: 28 }}>PASSWORD</label>
-            <input
-              className="field-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-            />
-
-            {error && (
-              <div style={{ color: 'var(--terracotta)', fontSize: 13, marginTop: 12 }}>{error}</div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary"
-              style={{ width: '100%', justifyContent: 'center', padding: '16px 22px', marginTop: 32, fontSize: 15 }}
-            >
-              {loading ? 'Signing in…' : 'Sign in →'}
-            </button>
-
-            <div
+            <Link
+              href="/register"
               style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr auto 1fr',
-                alignItems: 'center',
-                gap: 14,
-                margin: '32px 0 20px',
-                color: 'var(--taupe)',
-                fontSize: 13,
+                color: 'var(--accent)',
+                textDecoration: 'none'
               }}
             >
-              <span style={{ height: 1, background: 'var(--rule)' }} />
-              <span>or continue as</span>
-              <span style={{ height: 1, background: 'var(--rule)' }} />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              {(['student', 'teacher', 'admin'] as Role[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRole(r)}
-                  style={{
-                    background: 'transparent',
-                    border: '1px solid var(--rule-strong)',
-                    borderRadius: 14,
-                    padding: '14px 8px',
-                    textAlign: 'center',
-                    borderColor: role === r ? 'var(--terracotta)' : 'var(--rule-strong)',
-                    color: 'var(--ink)',
-                  }}
-                >
-                  <div className="mono" style={{ marginBottom: 4 }}>I AM A{r === 'admin' ? 'N' : ''}</div>
-                  <div className="display italic-accent" style={{ fontSize: 22 }}>
-                    {r.charAt(0).toUpperCase() + r.slice(1)}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <p style={{ marginTop: 24, fontSize: 14, color: 'var(--ink-soft)' }}>
-              New here?{' '}
-              <Link href="/register" style={{ fontStyle: 'italic', color: 'var(--terracotta)' }}>
-                Create an account →
-              </Link>
-            </p>
-          </form>
-        </div>
-      </section>
-    </main>
-  );
+              Create an account →
+            </Link>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+)
 }

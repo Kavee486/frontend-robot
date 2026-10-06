@@ -1,94 +1,119 @@
-import Link from 'next/link';
-import { useRouter } from 'next/router';
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/router'
+import { clearAuthSession, getAuthTokenFromStorage, getStoredUser } from '../lib/session'
 
-type Variant = 'marketing' | 'app';
+export default function Nav() {
+  const router = useRouter()
+  const [role, setRole] = useState<string | null>(null)
+  const [authed, setAuthed] = useState(false)
+  const [open, setOpen] = useState(false)
+  const currentPath = router.pathname
 
-export default function Nav({ variant = 'marketing' }: { variant?: Variant }) {
-  const router = useRouter();
-  if (variant === 'app') {
-    const items = [
-      { href: '/dashboard', label: 'Today' },
-      { href: '/practice', label: 'Practice' },
+  useEffect(() => {
+    const token = getAuthTokenFromStorage()
+    const me = getStoredUser()
+    setAuthed(!!token)
+    setRole(me?.role || null)
+  }, [router.pathname])
+
+  useEffect(() => {
+    setOpen(false)
+  }, [router.pathname])
+
+  const links = useMemo(() => {
+    if (!authed) {
+      return [
+        { href: '/login', label: 'Sign in' },
+        { href: '/register', label: 'Register' },
+      ]
+    }
+
+    if (role === 'teacher') {
+      return [
+        { href: '/dashboard/teacher', label: 'Dashboard' },
+        { href: '/teacher/students', label: 'Students' },
+        { href: '/teacher/heatmap', label: 'Heatmap' },
+        { href: '/teacher/explainability', label: 'AI Decisions' },
+        { href: '/skills', label: 'Skills' },
+        { href: '/skills/graph', label: 'Skill Graph' },
+        { href: '/questions', label: 'Questions' },
+        { href: '/knowledge', label: 'Knowledge' },
+        { href: '/history', label: 'History' },
+        { href: '/analytics', label: 'Analytics' },
+      ]
+    }
+
+    if (role === 'admin') {
+      return [
+        { href: '/dashboard/admin', label: 'Dashboard' },
+        { href: '/dashboard/users', label: 'Users' },
+        { href: '/skills', label: 'Skills' },
+        { href: '/skills/graph', label: 'Skill Graph' },
+        { href: '/questions', label: 'Questions' },
+        { href: '/history', label: 'History' },
+        //{ href: '/tutor', label: 'Tutor' },
+        //{ href: '/engagement', label: 'Engagement' },
+        { href: '/hardware', label: 'Hardware' },
+        { href: '/voice', label: 'Voice' },
+        { href: '/knowledge', label: 'Knowledge' },
+        { href: '/analytics', label: 'Analytics' },
+      ]
+    }
+
+    return [
+      { href: '/dashboard/student', label: 'Dashboard' },
+      //{ href: '/practice', label: 'Practice' },
+      //{ href: '/learn', label: 'Learn' },
+      { href: '/learn', label: 'Learn' },
+      { href: '/selflearn', label: 'Learn Anything' },
       { href: '/mastery', label: 'Mastery' },
       { href: '/history', label: 'History' },
-      { href: '/tutor', label: 'Tutor' },
-    ];
-    return (
-      <header
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '20px 40px',
-          borderBottom: '1px solid var(--rule)',
-        }}
-      >
-        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="diamond" />
-          <strong style={{ letterSpacing: '0.1em' }}>ATLAS</strong>
-        </Link>
-        <nav style={{ display: 'flex', gap: 28 }}>
-          {items.map((it) => {
-            const active = router.pathname === it.href;
-            return (
-              <Link
-                key={it.href}
-                href={it.href}
-                style={{
-                  fontSize: 14,
-                  color: active ? 'var(--ink)' : 'var(--taupe)',
-                  borderBottom: active ? '2px solid var(--terracotta)' : '2px solid transparent',
-                  paddingBottom: 4,
-                }}
-              >
-                {it.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span className="mono">STREAK · 12 DAYS</span>
-          <div
-            style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: 'var(--ink)', color: 'var(--cream)',
-              display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600,
-            }}
-          >
-            A
-          </div>
-        </div>
-      </header>
-    );
+      //{ href: '/tutor', label: 'Tutor' },
+      //{ href: '/engagement', label: 'Engagement' },
+    ]
+  }, [authed, role])
+
+  function logout() {
+    clearAuthSession()
+    router.push('/')
   }
 
+  // The student nav has far fewer links than teacher/admin, so it can stay
+  // as a full row down to a much narrower window before it needs to
+  // collapse into the hamburger menu.
+  const compact = links.length <= 6
+
   return (
-    <header
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '22px 40px',
-      }}
-    >
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span className="diamond" />
-        <strong style={{ letterSpacing: '0.1em' }}>ATLAS</strong>
-        <span className="mono" style={{ marginLeft: 8 }}>· Personalized Robot</span>
-      </Link>
-      <nav style={{ display: 'flex', gap: 30 }}>
-        {['Platform', 'Research', 'For Students', 'For Educators', 'About'].map((l) => (
-          <a key={l} href="#" style={{ fontSize: 14, color: 'var(--ink)' }}>
-            {l}
-          </a>
+    <>
+      <button
+        type="button"
+        className={`nav-toggle${compact ? ' compact' : ''}${open ? ' open' : ''}`}
+        aria-label="Toggle menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      <div className={`nav-links${compact ? ' compact' : ''}${open ? ' open' : ''}`}>
+        {links.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={currentPath === link.href ? 'active' : ''}
+          >
+            {link.label}
+          </Link>
         ))}
-      </nav>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <Link href="/login" style={{ fontSize: 14 }}>Sign in</Link>
-        <Link href="/dashboard" className="btn btn-dark">
-          Begin learning →
-        </Link>
+        {authed && (
+          <button type="button" className="nav-button" onClick={logout}>
+            Sign out
+          </button>
+        )}
       </div>
-    </header>
-  );
+    </>
+  )
 }
